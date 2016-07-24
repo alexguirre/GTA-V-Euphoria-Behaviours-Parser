@@ -56,7 +56,9 @@
 
         private void ParseGenCodeClick(object sender, RoutedEventArgs e)
         {
-            if (UIManager.OutputFolder == null || UIManager.OutputFolder.Length == 0)
+            if (UIManager.InputFile == null || UIManager.InputFile.Length == 0)
+                MessageBox.Show(Window, "Please provide an input file", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Information);
+            else if(UIManager.OutputFolder == null || UIManager.OutputFolder.Length == 0)
                 MessageBox.Show(Window, "Please provide an output folder", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Information);
             else if (UIManager.FileName == null || UIManager.FileName.Length == 0)
                 MessageBox.Show(Window, "Please provide an output file name", "Invalid settings", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -218,13 +220,13 @@ namespace {UIManager.Namespace}
     /// <summary>
     /// {behaviour.Description}
     /// </summary>
-    {GetVisibilityText()} class EuphoriaMessage{behaviour.Name.FirstLetterToUpper()} : EuphoriaMessage
-    {{
-        public EuphoriaMessage{behaviour.Name.FirstLetterToUpper()}(bool startNow) : base(""{behaviour.Name}"", startNow)
-        {{ }}
-
-";
+    {GetVisibilityText()} class {UIManager.ClassesPrefix}{behaviour.Name.FirstLetterToUpper()}{UIManager.ClassesSuffix} : EuphoriaMessage
+    {{";
                     sb.AppendLine(startText);
+
+                    string resetMethodText = $@"public new void Reset()
+        {{
+";
 
                     foreach (NMParam param in behaviour.Params)
                     {
@@ -271,8 +273,7 @@ namespace {UIManager.Namespace}
                             defaultValue = $" = {initValue}";
                         }
 
-                        string paramText = $@"
-        private {param.Type.Replace('v', 'V')} {param.Name.FirstLetterToLower()}{defaultValue};
+                        string paramText = $@"        private {param.Type.Replace('v', 'V')} {param.Name.FirstLetterToLower()}{defaultValue};
         /// <summary>
         /// {param.Description}
         /// </summary>
@@ -285,12 +286,29 @@ namespace {UIManager.Namespace}
                 SetArgument(""{param.Name}"", value);
                 {param.Name} = value;
             }} 
-        }}";
+        }}
+";
+                        if (!String.IsNullOrEmpty(initValue) && !String.IsNullOrWhiteSpace(initValue))
+                        {
+                            resetMethodText += $@"            {param.Name.FirstLetterToLower()} = {initValue};{Environment.NewLine}";
+                        }
+                        else
+                        {
+                            resetMethodText += $@"            {param.Name.FirstLetterToLower()} = default({param.Type.Replace('v', 'V')});{Environment.NewLine}";
+                        }
 
                         sb.AppendLine(paramText);
                     }
 
-                    string endText = $@"    }}";
+                    resetMethodText += $@"            base.Reset();
+        }}";
+
+            string endText = $@"
+        public EuphoriaMessage{behaviour.Name.FirstLetterToUpper()}(bool startNow) : base(""{behaviour.Name}"", startNow)
+        {{ }}
+
+        {resetMethodText}
+    }}";
 
                     sb.AppendLine(endText);
                 }

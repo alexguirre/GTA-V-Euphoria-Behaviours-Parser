@@ -111,7 +111,7 @@
             }
         }
 
-        private string @namespace = "GTAV.Euphoria";
+        private string @namespace = "Rage.Euphoria";
         public string Namespace
         {
             get { return @namespace; }
@@ -149,6 +149,34 @@
                 {
                     controlsEnabled = value;
                     RaisePropertyChanged(nameof(ControlsEnabled));
+                }
+            }
+        }
+
+        private string classesPrefix = "EuphoriaMessage";
+        public string ClassesPrefix
+        {
+            get { return classesPrefix; }
+            set
+            {
+                if (value != classesPrefix)
+                {
+                    classesPrefix = value;
+                    RaisePropertyChanged(nameof(ClassesPrefix));
+                }
+            }
+        }
+
+        private string classesSuffix = "";
+        public string ClassesSuffix
+        {
+            get { return classesSuffix; }
+            set
+            {
+                if (value != classesSuffix)
+                {
+                    classesSuffix = value;
+                    RaisePropertyChanged(nameof(ClassesSuffix));
                 }
             }
         }

@@ -49,7 +49,15 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="3">
                             <Label Content="Namespace:" Width="130"  IsEnabled="{Binding ControlsEnabled}"/>
-                            <TextBox Text="{Binding Namespace, FallbackValue=GTAV.Euphoria}" Width="160" Height="20" IsEnabled="{Binding ControlsEnabled}" />
+                            <TextBox Text="{Binding Namespace, FallbackValue=Rage.Euphoria}" Width="160" Height="20" IsEnabled="{Binding ControlsEnabled}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="3">
+                            <Label Content="Prefix:" Width="130"  IsEnabled="{Binding ControlsEnabled}"/>
+                            <TextBox Text="{Binding ClassesPrefix, FallbackValue=EuphoriaMessage}" Width="160" Height="20" IsEnabled="{Binding ControlsEnabled}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="3">
+                            <Label Content="Suffix:" Width="130"  IsEnabled="{Binding ControlsEnabled}"/>
+                            <TextBox Text="{Binding ClassesSuffix}" Width="160" Height="20" IsEnabled="{Binding ControlsEnabled}" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
