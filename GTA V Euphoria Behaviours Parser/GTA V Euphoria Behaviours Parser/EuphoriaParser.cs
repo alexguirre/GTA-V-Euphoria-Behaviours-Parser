@@ -1,4 +1,4 @@
-﻿namespace GTA_V_Euphoria_Behaviours_Parser
+namespace GTA_V_Euphoria_Behaviours_Parser
 {
     // System
     using System;
@@ -273,18 +273,21 @@ namespace {UIManager.Namespace}
                             defaultValue = $" = {initValue}";
                         }
 
-                        string paramText = $@"        private {param.Type.Replace('v', 'V')} {param.Name.FirstLetterToLower()}{defaultValue};
+                        string backendFieldName = param.Name.FirstLetterToLower();
+                        string propertyName = param.Name.FirstLetterToUpper();
+
+                        string paramText = $@"        private {param.Type.Replace('v', 'V')} {backendFieldName}{defaultValue};
         /// <summary>
         /// {param.Description}
         /// </summary>
-        public {param.Type.Replace('v', 'V')} {param.Name.FirstLetterToUpper()}
+        public {param.Type.Replace('v', 'V')} {propertyName}
         {{
-            get {{ return {param.Name}; }} 
+            get {{ return {backendFieldName}; }} 
             set 
             {{  
                 {paramClampText}
                 SetArgument(""{param.Name}"", value);
-                {param.Name} = value;
+                {backendFieldName} = value;
             }} 
         }}
 ";
