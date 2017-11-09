@@ -1,4 +1,4 @@
-namespace GTA_V_Euphoria_Behaviours_Parser
+﻿namespace GTA_V_Euphoria_Behaviours_Parser
 {
     // System
     using System;
@@ -211,109 +211,106 @@ namespace GTA_V_Euphoria_Behaviours_Parser
 namespace {UIManager.Namespace}
 {{
     using Rage;
-    using Rage.Euphoria;");
+    using Rage.Euphoria;
+    using Rage.Attributes;");
 
                 foreach (NMBehaviour behaviour in behaviours)
                 {
-                    string startText = $@"
-
+                    string classFormat = @"    
     /// <summary>
-    /// {behaviour.Description}
+    /// {0}
     /// </summary>
-    {GetVisibilityText()} class {UIManager.ClassesPrefix}{behaviour.Name.FirstLetterToUpper()}{UIManager.ClassesSuffix} : EuphoriaMessage
-    {{";
-                    sb.AppendLine(startText);
-
-                    string resetMethodText = $@"public new void Reset()
-        {{
+    {1} class {2} : EuphoriaMessage
+    {{
+{3}
+        public {2}(bool startNow) : base(""{4}"", startNow)
+        {{ }}
+    }}
 ";
+                    string classSummary = behaviour.Description;
+                    string classVisibility = GetVisibilityText();
+                    string className = UIManager.ClassesPrefix + behaviour.Name.FirstLetterToUpper() + UIManager.ClassesSuffix;
+
+                    StringBuilder propertiesSB = new StringBuilder();
 
                     foreach (NMParam param in behaviour.Params)
                     {
+                        // [EuphoriaParameter(Name = "name", Type = typeof(System.Type), DefaultValue = 0, MinimumValue = 0, MaximumValue = 0]
+                        // public Type Name { get; set;}
+
+                        const string propertyFormat = @"        /// <summary>
+        /// {0}
+        /// </summary>
+        [EuphoriaParameter(Name = ""{1}"", Type = typeof({2}){3})]
+        public {2} {4} {{ get; set; }} = {5};
+";
+
+                        string type;
+                        switch (param.Type)
+                        {
+                            case "vector3": type = "Vector3"; break;
+                            default: type = param.Type; break;
+                        }
+
+                        string name = param.Name;
+                        string propertyName = param.Name.FirstLetterToUpper();
+                        string propertyInitialValue = $"default({type})";
+
+                        string attributeExtraProperties = ""; // , DefaultValue = 0, MinimumValue = 0, MaximumValue = 0
+
                         string initValue = param.InitialValue.Replace("ART::kITSourceCurrent", "").Replace("ART::KITSourceCount-1", "");
-                        if (param.Type == "vector3")
+                        if (!String.IsNullOrWhiteSpace(initValue))
                         {
-                            string[] values = initValue.Split(',');
-                            initValue = $"new Vector3({values[0]}f, {values[1]}f, {values[2]}f)";
+                            switch (param.Type)
+                            {
+                                case "vector3":
+                                    string[] values = initValue.Split(',');
+                                    propertyInitialValue = $"new Vector3({values[0]}f,{values[1]}f,{values[2]}f)";
+                                    break;
+                                case "string":
+                                    propertyInitialValue = $"\"{initValue}\"";
+                                    attributeExtraProperties += $", DefaultValue = {propertyInitialValue}";
+                                    break;
+                                case "float":
+                                    propertyInitialValue = $"{initValue}f";
+                                    attributeExtraProperties += $", DefaultValue = {propertyInitialValue}";
+                                    break;
+                                case "int":
+                                    propertyInitialValue = $"{initValue}";
+                                    attributeExtraProperties += $", DefaultValue = {propertyInitialValue}";
+                                    break;
+                            }
                         }
-                        else if (param.Type == "string")
+
+                        if(String.IsNullOrEmpty(attributeExtraProperties) && param.Type != "vector3")
                         {
-                            initValue = $"\"{initValue}\"";
-                        }
-                        else if (param.Type == "float")
-                        {
-                            initValue = $"{initValue}f";
+                            attributeExtraProperties += $", DefaultValue = {propertyInitialValue}";
                         }
 
                         string paramMinValue = param.MinValue.Replace("ART::kITSourceCurrent", "").Replace("ART::KITSourceCount-1", "");
                         string paramMaxValue = param.MaxValue.Replace("ART::kITSourceCurrent", "").Replace("ART::KITSourceCount-1", "");
-
-                        string paramClampText = "";
-                        if (!String.IsNullOrEmpty(paramMinValue) && !String.IsNullOrWhiteSpace(paramMinValue) && !String.IsNullOrEmpty(paramMaxValue) && !String.IsNullOrWhiteSpace(paramMaxValue))
+                        
+                        if (!String.IsNullOrWhiteSpace(paramMinValue) && !String.IsNullOrWhiteSpace(paramMaxValue))
                         {
-                            if (param.Type == "float")
+                            switch (param.Type)
                             {
-                                paramClampText = $"value = MathHelper.Clamp(value, {paramMinValue}f, {paramMaxValue}f);";
-                            }
-                            else if (param.Type == "int")
-                            {
-                                paramClampText = $"value = MathHelper.Clamp(value, {paramMinValue}, {paramMaxValue});"; //substract and add 1 because Clamp minimun and maximun are exclusive
-                            }
-                            else if (param.Type == "vector3")
-                            {
-                                paramClampText = $@"value.X = MathHelper.Clamp(value.X, {paramMinValue}f, {paramMaxValue}f);
-                value.Y = MathHelper.Clamp(value.Y, {paramMinValue}f, {paramMaxValue}f);
-                value.Z = MathHelper.Clamp(value.Z, {paramMinValue}f, {paramMaxValue}f);";
+                                case "vector3":
+                                    // can't set Vector3 values in attributes
+                                    break;
+                                case "float":
+                                    attributeExtraProperties += $", MinimumValue = {paramMinValue}f, MaximumValue = {paramMaxValue}f";
+                                    break;
+                                case "int":
+                                    attributeExtraProperties += $", MinimumValue = {paramMinValue}, MaximumValue = {paramMaxValue}";
+                                    break;
                             }
                         }
                         
-                        string defaultValue = "";
-                        if(!String.IsNullOrEmpty(initValue) && !String.IsNullOrWhiteSpace(initValue))
-                        {
-                            defaultValue = $" = {initValue}";
-                        }
-
-                        string backendFieldName = param.Name.FirstLetterToLower();
-                        string propertyName = param.Name.FirstLetterToUpper();
-
-                        string paramText = $@"        private {param.Type.Replace('v', 'V')} {backendFieldName}{defaultValue};
-        /// <summary>
-        /// {param.Description}
-        /// </summary>
-        public {param.Type.Replace('v', 'V')} {propertyName}
-        {{
-            get {{ return {backendFieldName}; }} 
-            set 
-            {{  
-                {paramClampText}
-                SetArgument(""{param.Name}"", value);
-                {backendFieldName} = value;
-            }} 
-        }}
-";
-                        if (!String.IsNullOrEmpty(initValue) && !String.IsNullOrWhiteSpace(initValue))
-                        {
-                            resetMethodText += $@"            {param.Name.FirstLetterToLower()} = {initValue};{Environment.NewLine}";
-                        }
-                        else
-                        {
-                            resetMethodText += $@"            {param.Name.FirstLetterToLower()} = default({param.Type.Replace('v', 'V')});{Environment.NewLine}";
-                        }
-
-                        sb.AppendLine(paramText);
+                        propertiesSB.AppendFormat(propertyFormat, param.Description, name, type, attributeExtraProperties, propertyName, propertyInitialValue);
+                        propertiesSB.AppendLine();
                     }
 
-                    resetMethodText += $@"            base.Reset();
-        }}";
-
-            string endText = $@"
-        public EuphoriaMessage{behaviour.Name.FirstLetterToUpper()}(bool startNow) : base(""{behaviour.Name}"", startNow)
-        {{ }}
-
-        {resetMethodText}
-    }}";
-
-                    sb.AppendLine(endText);
+                    sb.AppendFormat(classFormat, classSummary, classVisibility, className, propertiesSB.ToString(), behaviour.Name);
                 }
 
                 sb.AppendLine("}");
